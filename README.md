@@ -1,10 +1,7 @@
 # CallCheck
 Sprawdza czy znak jest w OSEC'u i w klubie
 # Jak uruchomić ten program
-1. Uruchom _aktualizujOSEC.sh_
-2. Stwórz plik _skrytki.txt_ 
-3. Wypełnij _skrytki.txt_ zgodnie z formatem (__ZNAK=SKRYTKA__, *skrytka nie może zawierać znaku równania*)
-4. Uruchom _checkPzk.py_ za pomocą Python'a 3
+[Link do wikii](https://github.com/MaciejKtosiowski/CallCheck/wiki/Instalacja)
 # Dodatkowe polecenia
 * /U - Ustawienia, /U <3-LITEROWA NAZWA> <WARTOŚĆ>
 * /O - Wypisz członków oddziału, /O<ODZIAŁ> *Zwróć uwagę na brak spacji*
