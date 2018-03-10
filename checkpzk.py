@@ -189,7 +189,15 @@ for i in range(len(zPUS)):
             except IndexError:
                 continue
 del zPUS, zawPlikuUst
-maxtrafien = ustawienia['MaksWynikow'] if 'MaksWynikow' in ustawienia else 30
+maxtrafien = 30
+if 'MaksWynikow' in ustawienia:
+    print(repr(ustawienia['MaksWynikow']))
+    if ustawienia['MaksWynikow'].isdigit():
+        maxtrafien = int(ustawienia['MaksWynikow'])
+    else:
+        print('[WARN] [ustawienia] MaksWynikow isdigit(): False')
+        time.sleep(1)
+
 dynSearch = True
 if 'DynamiczneWyszukiwanie' in ustawienia:
     dynSearch = True if ustawienia['DynamiczneWyszukiwanie'] == "T" else False
@@ -203,6 +211,7 @@ if 'pozwalajNaWyczyszczenie' in ustawienia:
 
 menu = mmw.Menu("Ustawienia")
 # popup.parent = s
+log = open('log.txt', 'w')
 while __name__ == '__main__':
     s.setChar(bg.string+nazwa.string, 1, 1)
     if (not wyczysc) or not pozwalajNaWyczyszczenie:
@@ -323,6 +332,7 @@ while __name__ == '__main__':
         s.setChar(bg.string, 0, 0)
         s.clear()
     elif ch == '\x03':
+        log.close()
         exit(0)
     elif ch.isprintable():
         znak += ch.upper()
@@ -333,11 +343,31 @@ while __name__ == '__main__':
     if ch == '\r' or ch == '\n' or dynSearch:
         trafienia = 0
         ostat_traf = ''
+        sznak = znak.split('/')
+        # print(sznak)
+        # input('....')
         for i in pzk.keys():
-            if znak in i:
+            try:
+                if (not sznak[1].isalpha()) and (sznak[1] not in ['MM', 'AM'
+                                                                  'M', 'P',
+                                                                  'D', 'QRP',
+                                                                  '']):
+                    sznakini = sznak[1] in i
+                else:
+                    sznakini = sznak[0] in i
+            except IndexError:
+                sznakini = False
+            if znak in i or sznakini:
+                try:
+                    sznakinskrytki = sznak[1] in skrytki
+                except IndexError:
+                    sznakinskrytki = False
                 if i in skrytki:
                     s.setChar(traf.string+i+' '+pzk[i]+' '+traf_klub.string +
                               skrytki[i], 1, 4+trafienia)
+                elif sznakinskrytki:
+                    s.setChar(traf.string+i+' '+pzk[i]+' '+traf_klub.string +
+                              skrytki[sznak[1]], 1, 4+trafienia)
                 else:
                     s.setChar(traf.string+i+' '+pzk[i], 1, 4+trafienia)
                 trafienia += 1
@@ -346,6 +376,11 @@ while __name__ == '__main__':
                     break
         if znak in skrytki:
             s.setChar(traf_klub.string+' '+skrytki[znak], 1, 3)
+        try:
+            if sznak[1] in skrytki:
+                s.setChar(traf_klub.string+' '+skrytki[sznak[1]], 1, 3)
+        except IndexError:
+            pass
         if trafienia == 0:
             s.setChar(brakTrafien.string, 1, 3)
         if trafienia == 1:
