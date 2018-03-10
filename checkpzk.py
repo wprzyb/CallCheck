@@ -171,18 +171,39 @@ s.setChar(bg.string, 0, 0)
 s.clear()
 wyczysc = False
 
-maxtrafien = 30
+plikUstawien = open('ustawienia.txt', 'r')
+zawPlikuUst = plikUstawien.readlines()
+ustawienia = {}
+zPUS = []
+for i in range(len(zawPlikuUst)):
+        zPUS.append(zawPlikuUst[i].split("="))
+for i in range(len(zPUS)):
+        try:
+            if zPUS[i][1][len(zPUS[i][1])-1] == "\n":
+                ustawienia[zPUS[i][0]] = zPUS[i][1][:-1]
+            else:
+                ustawienia[zPUS[i][0]] = zPUS[i][1]
+        except Exception:
+            try:
+                ustawienia[zPUS[i][0]] = zPUS[i][1]
+            except IndexError:
+                continue
+del zPUS, zawPlikuUst
+maxtrafien = ustawienia['MaksWynikow'] if 'MaksWynikow' in ustawienia else 30
 dynSearch = True
-# pozwalajNaWyczyszczenie = True
-# trybCzyszczenia = 'backspace'
-trybCzyszczenia = 'backspace'
+if 'DynamiczneWyszukiwanie' in ustawienia:
+    dynSearch = True if ustawienia['DynamiczneWyszukiwanie'] == "T" else False
+
+trybCzyszczenia = ustawienia['trybCzyszczenia'] if 'trybCzyszczenia' in\
+    ustawienia else 'b'
 pozwalajNaWyczyszczenie = False
-# popup = mmw.Window("Okienko")
-# popup.x = 10
-# popup.y = 10
+if 'pozwalajNaWyczyszczenie' in ustawienia:
+    pozwalajNaWyczyszczenie = True if \
+        ustawienia['pozwalajNaWyczyszczenie'] == "T" else False
+
 menu = mmw.Menu("Ustawienia")
 # popup.parent = s
-while 1:
+while __name__ == '__main__':
     s.setChar(bg.string+nazwa.string, 1, 1)
     if (not wyczysc) or not pozwalajNaWyczyszczenie:
         s.setChar(prompt.string+' '+znak+bg.string, 2, 2)
@@ -245,7 +266,7 @@ while 1:
                         trafienia += 1
                     s.setChar(bg.string+'Przeszukiwanie... ('+str(num)+' / ' +
                               str(len(pzk.keys()))+')\n', 1, s.size[1]-1)
-                    time.sleep(0.00125)
+                    # time.sleep(0.00125)
                 print('Znaleziono', trafienia, 'wyników')
                 # input('[Naciśnij Enter, aby wrócic]')
                 print('\033[r')
