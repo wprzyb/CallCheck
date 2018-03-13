@@ -2,9 +2,11 @@ import time  # NOQA
 import subprocess
 try:
     import mmw3 as mmw
-except ImportError:
+except ImportError as e:
+    print(e)
     print('Nie można zaimportować mmw3.py.')
     print('Wciśnij Ctrl C aby się zatrzymać ten program, i się wylogować.')
+    print('.... prawdopodobnie')
     while 1:
         pass
 
@@ -26,7 +28,9 @@ def recode():
     f = open('osec_pzk.txt', 'w')
     for num, line in enumerate(lines):
         f.write(line)
-        print('\033[A\033[2KZapisywanie linii', num, '/', len(lines))
+        procent = format(num/len(lines)*100, '.0f')
+        print('\033[A\033[2KZapisywanie linii', num, '/', len(lines),
+              str(procent)+"%")
     print('\033[A\033[2KZapisano', len(lines), 'linii')
     print('Plik Przekodowany\n')
 
@@ -44,7 +48,9 @@ def recode():
     f2 = open('osec_kluby.txt', 'w')
     for num, line in enumerate(lines):
         f2.write(line)
-        print('\033[A\033[2KZapisywanie linii', num, '/', len(lines))
+        procent = format(num/len(lines)*100, '.0f')
+        print('\033[A\033[2KZapisywanie linii', num, '/', len(lines),
+              str(procent)+"%")
     print('\033[A\033[2KZapisano', len(lines), 'linii')
     print('Plik Przekodowany\n')
 
@@ -68,7 +74,9 @@ except UnicodeDecodeError:
 newlines = []
 nowekluby = []
 for num, line in enumerate(lines):
-    print('\033[A\033[2KKonwertowanie linii', num, '/', len(lines))
+    procent = format(num/len(lines)*100, '.0f')
+    print('\033[A\033[2KKonwertowanie linii', num, '/', len(lines), '(' +
+          str(procent)+'%')
     newline = line
     while '  ' in newline:
         newline = newline.replace('  ', ' ')
@@ -76,7 +84,9 @@ for num, line in enumerate(lines):
     newlines.append(newline[:-1])
 
 for num, line in enumerate(kluby):
-    print('\033[A\033[2KKonwertowanie linii', num, '/', len(kluby))
+    procent = format(num/len(lines)*100, '.0f')
+    print('\033[A\033[2KKonwertowanie linii', num, '/', len(kluby), '(' +
+          str(procent)+'%')
     newline = line
     while '  ' in newline:
         newline = newline.replace('  ', ' ')
@@ -129,6 +139,7 @@ for num, line in enumerate(lines):
         pzk[line] = oddzial
 print('\033[2A\033[2KLiczba przetworzonych oddziałów:',
       len(przet_odzialy))
+del przet_odzialy
 
 print('\033[2KLista liczy:', len(pzk.keys()), 'wpisów')
 print('Czytanie pliku skrytki.txt.')
@@ -191,12 +202,13 @@ for i in range(len(zPUS)):
 del zPUS, zawPlikuUst
 maxtrafien = 30
 if 'MaksWynikow' in ustawienia:
-    print(repr(ustawienia['MaksWynikow']))
+    # print(repr(ustawienia['MaksWynikow']))
     if ustawienia['MaksWynikow'].isdigit():
         maxtrafien = int(ustawienia['MaksWynikow'])
     else:
-        print('[WARN] [ustawienia] MaksWynikow isdigit(): False')
-        time.sleep(1)
+        print('[FATAL] [ustawienia] MaksWynikow isdigit(): False')
+        print('ustawienia["MaksWynikow"] =', repr(ustawienia['MaksWynikow']))
+        exit()
 
 dynSearch = True
 if 'DynamiczneWyszukiwanie' in ustawienia:
@@ -208,7 +220,6 @@ pozwalajNaWyczyszczenie = False
 if 'pozwalajNaWyczyszczenie' in ustawienia:
     pozwalajNaWyczyszczenie = True if \
         ustawienia['pozwalajNaWyczyszczenie'] == "T" else False
-
 menu = mmw.Menu("Ustawienia")
 # popup.parent = s
 log = open('log.txt', 'w')
@@ -219,7 +230,6 @@ while __name__ == '__main__':
     else:
         s.setChar(znakWyczyszczenie.string+' '+znak, 2, 2)
     ch = s.getChar()
-
     if wyczysc and pozwalajNaWyczyszczenie:
         wyczysc = False
         if trybCzyszczenia == '*':
@@ -252,10 +262,22 @@ while __name__ == '__main__':
         s.clear()
     elif ch == '\033':
         ch2 = s.getChar()
+        if ch2 == 'O':
+            ch3 = s.getChar()
+            if ch3 == 'Q':
+                znak = ''
+                s.setChar(bg.string, 0, 0)
+                s.clear()
         if ch2 == '[':
             ch3 = s.getChar()
-            key = mmw.KeyMap.decode(ch+ch2+ch3)
-            # print(key)
+            if ch3 == '[':
+                ch4 = s.getChar()
+                if ch4 == 'B':
+                    znak = ''
+                    s.setChar(bg.string, 0, 0)
+                    s.clear()
+            else:
+                key = mmw.KeyMap.decode(ch+ch2+ch3)
     elif ch == '\t' or ch == '\n' or ch == '\r':
         if len(znak) > 3:
             if znak[0:2] == '/O':
@@ -273,13 +295,20 @@ while __name__ == '__main__':
                         s.setChar(bg.string+i+'\n', 1, s.size[1]-2)
                         listTraf.append(i)
                         trafienia += 1
+                    procent = format(num/len(pzk.keys())*100, '.0f')
                     s.setChar(bg.string+'Przeszukiwanie... ('+str(num)+' / ' +
-                              str(len(pzk.keys()))+')\n', 1, s.size[1]-1)
-                    # time.sleep(0.00125)
+                              str(len(pzk.keys()))+' ' +
+                              procent+'%)\n',
+                              1, s.size[1]-1)
+                    time.sleep(0.00125)
                 print('Znaleziono', trafienia, 'wyników')
                 # input('[Naciśnij Enter, aby wrócic]')
                 print('\033[r')
                 s.clear()  # Żeby na less'sie nie wyświetlał się tekst
+                createProc = subprocess.Popen('mkfifo wynikiWyszukiwania.txt',
+                                              shell=True)
+                createProc.wait(timeout=3)
+
                 proc = subprocess.Popen('less -f wynikiWyszukiwania.txt',
                                         shell=True)
 
