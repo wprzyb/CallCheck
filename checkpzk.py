@@ -206,18 +206,12 @@ if 'MaksWynikow' in ustawienia:
     if ustawienia['MaksWynikow'].isdigit():
         maxtrafien = int(ustawienia['MaksWynikow'])
     else:
-<<<<<<< HEAD
         print('-'*80)
         print('[FATAL] [ustawienia] MaksWynikow isdigit(): False')
         print('ustawienia["MaksWynikow"] =', repr(ustawienia['MaksWynikow']))
         print('^C - Wyjdź')
         while 1:
             pass
-=======
-        print('[FATAL] [ustawienia] MaksWynikow isdigit(): False')
-        print('ustawienia["MaksWynikow"] =', repr(ustawienia['MaksWynikow']))
-        exit()
->>>>>>> 2078113684c2296c39cc6ae435539d3c25240e95
 
 dynSearch = True
 if 'DynamiczneWyszukiwanie' in ustawienia:
