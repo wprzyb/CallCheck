@@ -1,5 +1,7 @@
 import time  # NOQA
 import subprocess
+import os
+import signal
 try:
     import mmw3 as mmw
 except ImportError as e:
@@ -177,6 +179,15 @@ traf_klub = mmw.FormattedString(bg.string +
                                 'Skrytka:')
 znakWyczyszczenie = mmw.FormattedString(bg.string +
                                         "$(b_gray)Znak>")
+nacisnijEnter = mmw.FormattedString(bg.string + "$(b_gray)[Naciśnij enter]")
+screenwarn = mmw.FormattedString('$(b_red)$(bright_white)'
+                                 'UWAGA: Screen nie respektuje '
+                                 'CSI[2J i kodów koloru, a więc ten '
+                                 'program nie będzie się poprawnie '
+                                 'wyświetlał')
+brakKontroliZadan = mmw.FormattedString('$(b_red)$(bright_white)'
+                                        'Rodzicem procesu nie jest powłoka, '
+                                        'nie można uśpić procesu')
 znak = ''
 s.setChar(bg.string, 0, 0)
 s.clear()
@@ -213,18 +224,38 @@ if 'MaksWynikow' in ustawienia:
         while 1:
             pass
 
+pozwalajNaUsypianie = False
+if 'pozwalajNaUsypianie' in ustawienia:
+    if ustawienia['pozwalajNaUsypianie'] == 'T':
+        pozwalajNaUsypianie = True
+    else:
+        pozwalajNaUsypianie = False
+
 dynSearch = True
-if 'DynamiczneWyszukiwanie' in ustawienia:
-    dynSearch = True if ustawienia['DynamiczneWyszukiwanie'] == "T" else False
+if 'dynamiczneWyszukiwanie' in ustawienia:
+    dynSearch = True if ustawienia['dynamiczneWyszukiwanie'] == "T" else False
 
 trybCzyszczenia = ustawienia['trybCzyszczenia'] if 'trybCzyszczenia' in\
     ustawienia else 'b'
+
 pozwalajNaWyczyszczenie = False
 if 'pozwalajNaWyczyszczenie' in ustawienia:
     pozwalajNaWyczyszczenie = True if \
         ustawienia['pozwalajNaWyczyszczenie'] == "T" else False
+
 menu = mmw.Menu("Ustawienia")
 # popup.parent = s
+cname = open('/proc/'+str(os.getppid())+'/comm').read().replace('\x00', ' ')\
+    .replace('\n', '').replace('\r', '')
+if cname == 'screen':
+    s.setChar(screenwarn.string, 0, 1)
+    s.setChar(nacisnijEnter.string, 0, 2)
+    input()
+    s.clear()
+listaShelli = open('/etc/shells', 'r').readlines()
+listaShelli.pop(0)
+for num, shell in enumerate(listaShelli):
+    listaShelli[num] = shell.split('/')
 log = open('log.txt', 'w')
 while __name__ == '__main__':
     s.setChar(bg.string+nazwa.string, 1, 1)
@@ -255,6 +286,28 @@ while __name__ == '__main__':
         s.setChar(bg.string, 0, 0)
         s.clear()
         continue
+    elif ch == '\x1a':
+        if pozwalajNaUsypianie:
+            if cname == os.environ['SHELL'].split('/')[-1] or\
+                    cname in listaShelli:
+                s.clear()
+                s.setChar('\033[0m', 1, 1)
+                s.clear()
+                os.kill(os.getpid(), signal.SIGSTOP)
+                s.setChar(bg.string, 1, 1)
+                s.clear()
+            else:
+                s.clear()
+                s.setChar(brakKontroliZadan.string, 1, 1)
+                s.setChar(nacisnijEnter.string, 1, 2)
+                input()
+                s.clear()
+        else:
+            s.clear()
+            s.setChar('Polityka ustawień zabrania akcji: Usypianie', 1, 1)
+            s.setChar(nacisnijEnter.string, 1, 2)
+            input()
+
     elif ch == '\x12':
         znak = ''
         s.setChar(bg.string, 0, 0)
@@ -378,6 +431,11 @@ while __name__ == '__main__':
         sznak = znak.split('/')
         # print(sznak)
         # input('....')
+        wyniki = []
+        try:
+            sznakinskrytki = sznak[1] in skrytki
+        except IndexError:
+            sznakinskrytki = False
         for i in pzk.keys():
             try:
                 if (not sznak[1].isalpha()) and (sznak[1] not in ['MM', 'AM'
@@ -390,15 +448,13 @@ while __name__ == '__main__':
             except IndexError:
                 sznakini = False
             if znak in i or sznakini:
-                try:
-                    sznakinskrytki = sznak[1] in skrytki
-                except IndexError:
-                    sznakinskrytki = False
                 if i in skrytki:
-                    s.setChar(traf.string+i+' '+pzk[i]+' '+traf_klub.string +
+                    s.setChar(traf.string+i+' '+pzk[i]+' ' +
+                              traf_klub.string +
                               skrytki[i], 1, 4+trafienia)
                 elif sznakinskrytki:
-                    s.setChar(traf.string+i+' '+pzk[i]+' '+traf_klub.string +
+                    s.setChar(traf.string+i+' '+pzk[i]+' ' +
+                              traf_klub.string +
                               skrytki[sznak[1]], 1, 4+trafienia)
                 else:
                     s.setChar(traf.string+i+' '+pzk[i], 1, 4+trafienia)
