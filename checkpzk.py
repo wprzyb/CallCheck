@@ -2,10 +2,13 @@ import time  # NOQA
 import subprocess
 import os
 import signal
+import json
+import getpass
+import hashlib
 try:
-    import mmw3 as mmw
+    import mmw
 except ImportError as e:
-    print(e)
+    print('mmw:', e)
     print('Nie można zaimportować mmw3.py.')
     print('Wciśnij Ctrl C aby się zatrzymać ten program, i się wylogować.')
     print('.... prawdopodobnie')
@@ -13,9 +16,8 @@ except ImportError as e:
         pass
 
 
-def recode():
-    f = open('osec_pzk.txt', 'r', encoding='Latin2')
-    f2 = open('osec_kluby.txt', 'r', encoding='Latin2')
+def recode_file(name, encodingFrom='Latin2'):
+    f = open(name, 'r', encoding=encodingFrom)
     lines = []
     num = 0
     while 1:
@@ -27,34 +29,23 @@ def recode():
         print('\033[A\033[2KPrzeczytano linię', num, '/ ?')
     print('\033[A\033[2KPrzeczytano', num, 'linii\n')
     f.close()
-    f = open('osec_pzk.txt', 'w')
+    f = open(name, 'w')
     for num, line in enumerate(lines):
         f.write(line)
         procent = format(num/len(lines)*100, '.0f')
         print('\033[A\033[2KZapisywanie linii', num, '/', len(lines),
               str(procent)+"%")
     print('\033[A\033[2KZapisano', len(lines), 'linii')
-    print('Plik Przekodowany\n')
+    print('['+name+']: Plik Przekodowany\n')
 
-    lines = []
-    num = 0
-    while 1:
-        num += 1
-        line = f2.readline()
-        if line == "":
-            break
-        lines.append(line)
-        print('\033[A\033[2KPrzeczytano linię', num, '/ ?')
-    print('\033[A\033[2KPrzeczytano', num, 'linii\n')
-    f2.close()
-    f2 = open('osec_kluby.txt', 'w')
-    for num, line in enumerate(lines):
-        f2.write(line)
-        procent = format(num/len(lines)*100, '.0f')
-        print('\033[A\033[2KZapisywanie linii', num, '/', len(lines),
-              str(procent)+"%")
-    print('\033[A\033[2KZapisano', len(lines), 'linii')
-    print('Plik Przekodowany\n')
+
+def recode():
+    print('Przekodowano 0/2')
+    recode_file('osec_pzk.txt')
+    print('Przekodowano 1/2')
+    recode_file('osec_kluby.txt')
+    print('Przekodowano 2/2')
+    time.sleep(1)
 
 
 print('\n')
@@ -80,9 +71,8 @@ for num, line in enumerate(lines):
     print('\033[A\033[2KKonwertowanie linii', num, '/', len(lines), '(' +
           str(procent)+'%')
     newline = line
-    while '  ' in newline:
+    while '  ' in newline:  # Dwie spacje som w tym stringu
         newline = newline.replace('  ', ' ')
-        # print('\033[A\033[2K', newline)
     newlines.append(newline[:-1])
 
 for num, line in enumerate(kluby):
@@ -167,6 +157,7 @@ for i in range(len(skrs)):
                 continue
 del skrr, skrs
 s = mmw.Screen()
+znak = ''
 nazwa = mmw.FormattedString('Sprawdzacz PZK. Autor: Maciek Marciniak SO5AM')
 bg = mmw.FormattedString('$(b_blue)$(bright_white)')
 prompt = mmw.FormattedString('$(b_cyan)Znak>')
@@ -188,35 +179,39 @@ screenwarn = mmw.FormattedString('$(b_red)$(bright_white)'
 brakKontroliZadan = mmw.FormattedString('$(b_red)$(bright_white)'
                                         'Rodzicem procesu nie jest powłoka, '
                                         'nie można uśpić procesu')
-znak = ''
+adminStr = mmw.FormattedString('$(b_red)[A]')
 s.setChar(bg.string, 0, 0)
 s.clear()
 wyczysc = False
-
-plikUstawien = open('ustawienia.txt', 'r')
-zawPlikuUst = plikUstawien.readlines()
-ustawienia = {}
-zPUS = []
-for i in range(len(zawPlikuUst)):
-        zPUS.append(zawPlikuUst[i].split("="))
-for i in range(len(zPUS)):
-        try:
-            if zPUS[i][1][len(zPUS[i][1])-1] == "\n":
-                ustawienia[zPUS[i][0]] = zPUS[i][1][:-1]
-            else:
-                ustawienia[zPUS[i][0]] = zPUS[i][1]
-        except Exception:
-            try:
-                ustawienia[zPUS[i][0]] = zPUS[i][1]
-            except IndexError:
-                continue
-del zPUS, zawPlikuUst
-maxtrafien = 30
-if 'MaksWynikow' in ustawienia:
-    # print(repr(ustawienia['MaksWynikow']))
-    if ustawienia['MaksWynikow'].isdigit():
-        maxtrafien = int(ustawienia['MaksWynikow'])
+try:
+    with open('ustawienia.json') as plk:
+        zawPlikuUst = plk.readlines()
+except FileNotFoundError:
+    pass
+try:
+    ustawienia = json.loads('\n'.join(zawPlikuUst))
+    del zawPlikuUst
+except (json.decoder.JSONDecodeError, NameError) as e:
+    ans = 'n'
+    if isinstance(e, NameError):
+        ans = 't'
     else:
+        print('[ERR] nie można załadować ustawień.')
+        print('Czy chcesz aby je nadpisać?')
+        ans = input('[T/n]')
+    if ans.lower()[0] == 't':
+        ustawienia = {'MaksWynikow': 30, 'pozwalajNaUsypianie': False,
+                      'dynWysz': True,
+                      'pozwalajNaWyczyszczenie': True,
+                      'trybCzyszczenia': 'backspace',
+                      'hashHasla': 'N/A',
+                      'czasAdmina': 0.1,
+                      'adminDoWylogowania': False}
+        nzaw = json.dumps(ustawienia, indent=2, sort_keys=True)
+        with open('ustawienia.json', 'w') as plk:
+            plk.write(nzaw)
+# ustawienia['MaksWynikow'] = 30
+if not isinstance(ustawienia['MaksWynikow'], int):
         print('-'*80)
         print('[FATAL] [ustawienia] MaksWynikow isdigit(): False')
         print('ustawienia["MaksWynikow"] =', repr(ustawienia['MaksWynikow']))
@@ -224,27 +219,17 @@ if 'MaksWynikow' in ustawienia:
         while 1:
             pass
 
-pozwalajNaUsypianie = False
-if 'pozwalajNaUsypianie' in ustawienia:
-    if ustawienia['pozwalajNaUsypianie'] == 'T':
-        pozwalajNaUsypianie = True
-    else:
-        pozwalajNaUsypianie = False
 
-dynSearch = True
-if 'dynamiczneWyszukiwanie' in ustawienia:
-    dynSearch = True if ustawienia['dynamiczneWyszukiwanie'] == "T" else False
+ustawienia['trybCzyszczenia'] = 'backspace'
+if 'trybCzyszczenia' in ustawienia:
+    if ustawienia['trybCzyszczenia'] not in ['*', 'backspace']:
+        s.setChar(mmw.FormattedString(
+                 'Konfiguracja: $(red)Niewłaściwy tryb czyszczenia:$(yellow)'
+                  + ustawienia['trybCzyszczenia'] + '$(reset)'), 1, 1)
+        s.setChar(nacisnijEnter, 1, 2)
+        input()
+        exit()
 
-trybCzyszczenia = ustawienia['trybCzyszczenia'] if 'trybCzyszczenia' in\
-    ustawienia else 'b'
-
-pozwalajNaWyczyszczenie = False
-if 'pozwalajNaWyczyszczenie' in ustawienia:
-    pozwalajNaWyczyszczenie = True if \
-        ustawienia['pozwalajNaWyczyszczenie'] == "T" else False
-
-menu = mmw.Menu("Ustawienia")
-# popup.parent = s
 cname = open('/proc/'+str(os.getppid())+'/comm').read().replace('\x00', ' ')\
     .replace('\n', '').replace('\r', '')
 if cname == 'screen':
@@ -256,17 +241,64 @@ listaShelli = open('/etc/shells', 'r').readlines()
 listaShelli.pop(0)
 for num, shell in enumerate(listaShelli):
     listaShelli[num] = shell.split('/')
-log = open('log.txt', 'w')
+trybAdmina = False
+if ustawienia['hashHasla'].lower() == 'n/a':
+    s.clear()
+    print('Wymagane jest ustawienie hasła admina')
+    kupa = ''
+    try:
+        while 1:
+            passwd = getpass.getpass('Wpisz nowe hasło admina>>')
+            passwd2 = getpass.getpass('Potwierdź nowe hasło admina>>')
+            if passwd == passwd2:
+                hasher = hashlib.sha256()
+                hasher.update(bytes(passwd, 'utf-8'))
+                kupa = hasher.hexdigest()
+                ustawienia['hashHasla'] = kupa
+                nzaw = json.dumps(ustawienia, indent=2, sort_keys=True)
+                with open('ustawienia.json', 'w') as plk:
+                    plk.write(nzaw)
+                break
+            else:
+                print('Hasła nie są takie same.')
+    except (KeyboardInterrupt, EOFError):
+        print(mmw.FormattedString('$(reset)'))
+        s.clear()
+        print(mmw.FormattedString('$(reset)\n\nAnulowano$(reset)'))
+        exit()
+    s.clear()
+skrotyStr = mmw.FormattedString('$(b_cyan)\033[K$(b_gray)[F2]$(b_cyan) '
+                                '$(b_gray)[Ctrl+R]'
+                                '$(b_cyan) Czyść ')
+skr_admin = mmw.FormattedString('$(b_gray)[F10]$(b_cyan) Tryb admina ')
+skr_wyloguj = mmw.FormattedString('$(b_gray)[F10]$(b_cyan) Wyloguj ')
+skr_cmd = mmw.FormattedString('$(b_gray)[ENTER]$(b_cyan) $(b_gray)[TAB]'
+                              '$(b_cyan) Wykonaj komende')
+skr_szukaj = mmw.FormattedString('$(b_gray)[ENTER]$(b_cyan) $(b_gray)[TAB]'
+                                 '$(b_cyan) Szukaj')
 while __name__ == '__main__':
     s.setChar(bg.string+nazwa.string, 1, 1)
-    if (not wyczysc) or not pozwalajNaWyczyszczenie:
-        s.setChar(prompt.string+' '+znak+bg.string, 2, 2)
+    s.setChar(skrotyStr.string
+              + (skr_wyloguj.string if trybAdmina else skr_admin.string)
+              + (skr_cmd.string if znak.startswith('/') else
+                 (skr_szukaj.string if not ustawienia['dynWysz'] else '')),
+              0, s.size[1])
+    if (not wyczysc) or not ustawienia['pozwalajNaWyczyszczenie']:
+        if trybAdmina:
+            s.setChar(adminStr.string+prompt.string+' '+znak+bg.string, 1, 2)
+        else:
+            s.setChar(prompt.string+' '+znak+bg.string, 4, 2)
     else:
-        s.setChar(znakWyczyszczenie.string+' '+znak, 2, 2)
+        if trybAdmina:
+            s.setChar(adminStr.string+znakWyczyszczenie.string+' '+znak, 1, 2)
+        else:
+            s.setChar(znakWyczyszczenie.string+' '+znak, 4, 2)
     ch = s.getChar()
-    if wyczysc and pozwalajNaWyczyszczenie:
+    if wyczysc and ustawienia['pozwalajNaWyczyszczenie']:
         wyczysc = False
-        if trybCzyszczenia == '*':
+        if znak == '':
+            pass
+        elif ustawienia['trybCzyszczenia'] == '*':
             isSlash = False
             try:
                 isSlash = znak[0] != '/'
@@ -275,22 +307,23 @@ while __name__ == '__main__':
             if not isSlash:
                 znak = ch.upper() if ch.isprintable() and not ch.isspace()\
                     else ''
-        elif trybCzyszczenia == 'backspace':
+        elif ustawienia['trybCzyszczenia'] == 'backspace':
+            oldlen = len(znak)
             if ch == '\x7f':
                 wyczysc = False
                 znak = ''
+                s.setChar(bg.string, 0, 0)
+                s.setChar(prompt.string+' '+znak+bg.string+(' '*oldlen), 2, 2)
+                print('\n\033[K'*(ustawienia['MaksWynikow']+2))
             else:
                 znak += ch.upper() if ch.isprintable() and \
                     not ch.isspace() else ''
                 wyczysc = True
-        s.setChar(bg.string, 0, 0)
-        s.clear()
         continue
     elif ch == '\x1a':
-        if pozwalajNaUsypianie:
+        if ustawienia['pozwalajNaUsypianie'] or trybAdmina:
             if cname == os.environ['SHELL'].split('/')[-1] or\
                     cname in listaShelli:
-                s.clear()
                 s.setChar('\033[0m', 1, 1)
                 s.clear()
                 os.kill(os.getpid(), signal.SIGSTOP)
@@ -306,37 +339,67 @@ while __name__ == '__main__':
             s.clear()
             s.setChar('Polityka ustawień zabrania akcji: Usypianie', 1, 1)
             s.setChar(nacisnijEnter.string, 1, 2)
-            input()
-
-    elif ch == '\x12':
+            while 1:
+                ch = s.getChar()
+                if ch == '\n' or ch == '\r':
+                    break
+            s.clear()
+    elif ch == '\x12':  # ^R
         znak = ''
         s.setChar(bg.string, 0, 0)
         s.clear()
         continue
-    elif ch == '\x0c':
+    elif ch == '\x0c':  # ^L
         s.setChar(bg.string, 0, 0)
         s.clear()
-    elif ch == '\033':
+    elif ch == '\033':  # ESC
         ch2 = s.getChar()
-        if ch2 == 'O':
+        if ch2 == 'O':  # ..
             ch3 = s.getChar()
-            if ch3 == 'Q':
+            if ch3 == 'Q':  # F2
                 znak = ''
                 s.setChar(bg.string, 0, 0)
                 s.clear()
         if ch2 == '[':
             ch3 = s.getChar()
+            if ch3 == '2':
+                ch4 = s.getChar()
+                if ch4 == '1':
+                    ch5 = s.getChar()
+                    if ch5 == '~':  # F10
+                        s.clear()
+                        s.setCur(0, 0)
+                        if trybAdmina:
+                            trybAdmina = False
+                            print('Wylogowano')
+                            input('[enter]')
+                        else:
+                            # print('Wpisz hasło admina>>', end=' ')
+                            passwd = getpass.getpass('Wpisz hasło admina>>')
+                            # s.clear()
+                            hasher = hashlib.sha256()
+                            hasher.update(bytes(passwd, 'utf-8'))
+                            kupa = hasher.hexdigest()
+                            if kupa == ustawienia['hashHasla']:
+                                trybAdmina = True
+                                logoutTime = time.time()\
+                                    + (ustawienia['czasAdmina']*60)
+                            else:
+                                trybAdmina = False
+                                print('Hasło nie poprawne')
+                                input('[enter]')
+                        s.clear()
             if ch3 == '[':
                 ch4 = s.getChar()
-                if ch4 == 'B':
+                if ch4 == 'B':  # F2 alt
                     znak = ''
                     s.setChar(bg.string, 0, 0)
                     s.clear()
             else:
-                key = mmw.KeyMap.decode(ch+ch2+ch3)
+                key = mmw.decoding.decode(ch+ch2+ch3)
     elif ch == '\t' or ch == '\n' or ch == '\r':
-        if len(znak) > 3:
-            if znak[0:2] == '/O':
+        if znak.startswith('/O'):
+            try:
                 trafienia = 0
                 s.setChar(bg.string, 0, 0)
                 s.clear()
@@ -347,7 +410,7 @@ while __name__ == '__main__':
                 listTraf = []
                 for i in pzk.keys():
                     num += 1
-                    if pzk[i] == znak[2:]:
+                    if pzk[i] == znak[3:]:
                         s.setChar(bg.string+i+'\n', 1, s.size[1]-2)
                         listTraf.append(i)
                         trafienia += 1
@@ -356,7 +419,7 @@ while __name__ == '__main__':
                               str(len(pzk.keys()))+' ' +
                               procent+'%)\n',
                               1, s.size[1]-1)
-                    time.sleep(0.00125)
+                    time.sleep(0.0003125)
                 print('Znaleziono', trafienia, 'wyników')
                 # input('[Naciśnij Enter, aby wrócic]')
                 print('\033[r')
@@ -374,58 +437,100 @@ while __name__ == '__main__':
                 tfile.close()
                 proc.wait()
                 s.clear()  # Żeby less nie wyświetlał się na głównym ekranie
-                znak = ''
-        if len(znak) > 7:
-            if znak[0:2] == '/U':
-                ustZmien = False
-                if znak[3:6] == 'PNW':
-                    if znak[7] == "N":
-                        pozwalajNaWyczyszczenie = False
-                        ustZmien = True
-                    elif znak[7] == 'T':
-                        pozwalajNaWyczyszczenie = True
-                        ustZmien = True
-                elif znak[3:6] == 'MTR':
-                    if znak[7:].isalnum():
-                        maxtrafien = int(znak[7:])
-                        ustZmien = True
-
-                elif znak[3:6] == 'DYN':
-                    if znak[7] == "N":
-                        dynSearch = False
-                        ustZmien = True
-                    elif znak[7] == 'T':
-                        dynSearch = True
-                        ustZmien = True
-                elif znak[3:6] == 'TRC':
-                    if znak[7] == '*':
-                        trybCzyszczenia = '*'
-                        ustZmien = True
-                    if znak[7] == 'B':
-                        trybCzyszczenia = 'backspace'
-                        ustZmien = True
-                s.setChar(bg.string, 0, 0)
+            except KeyboardInterrupt:
+                pass
+            znak = ''
+        if znak.startswith('/AKT'):
+            znak = ''
+            if not trybAdmina:
                 s.clear()
-                if ustZmien:
-                    print('Ustawienie('+znak[3:6]+') zmienione na '+znak[7:])
-                    input('[Naciśnij enter]')
-                    s.setChar(bg.string, 0, 0)
-                    s.clear()
-                znak = ''
+                s.setCur(0, 0)
+                print('Nie można zaktualizować plików z OSECu: '
+                      'nie jesteś w trybie admina')
+                input('[enter]')
+                s.clear()
+            else:
+                print(mmw.FormattedString('$(reset)'))
+                s.clear()
+                print('Uruchamianie skryptu...')
+                proc = subprocess.Popen('./aktualizujOSEC.sh',
+                                        shell=True)
+                while True:
+                    if proc.poll() is not None:
+                        break
+                print('-'*80)
+                print('Skrypt zakończony.')
+                print('Wymagany jest restart, aby zatwierdzić zmiany')
+                print('Naciśnij enter aby wyjść.')
+                try:
+                    input('[ENTER || Ctrl+C]')
+                    exit()
+                except (KeyboardInterrupt, EOFError):
+                    pass
+        if znak.startswith('/KONFIG'):
+            if not trybAdmina:
+                s.clear()
+                s.setCur(0, 0)
+                print('Nie można edytować konfiguracji: '
+                      'nie jesteś w trybie admina')
+                input('[enter]')
+            else:
+                proc = subprocess.Popen('sensible-editor ustawienia.json',
+                                        shell=True)
+                while True:
+                    if proc.poll() is not None:
+                        break
+                with open('ustawienia.json', 'r') as plk:
+                    zaw = plk.readlines()
+                    ustawienia = json.loads(''.join(zaw))
+            s.setChar(bg.string, 0, 0)
+            s.clear()
+            znak = ''
     elif ch == '\x7f':
         znak = znak[:-1]
         s.setChar(bg.string, 0, 0)
-        s.clear()
+        print('\033[2;0H\033[K\n\033[K')
     elif ch == '\x03':
-        log.close()
-        exit(0)
+        try:
+            if ustawienia['adminDoWylogowania']:
+                if not trybAdmina:
+                    s.clear()
+                    s.setCur(0, 0)
+                    print('Nie można wyjść: wymagane są uprawnienia admina')
+                    input('[enter]')
+                    # s.clear()
+                else:
+                    exit()
+            else:
+                exit()
+        except (KeyboardInterrupt, EOFError):
+            pass
+        finally:
+            s.clear()
     elif ch.isprintable():
         znak += ch.upper()
     else:
         s.setChar(mmw.FormattedString('$(b_red)$(bright_white)Znak?' +
                                       repr(ch)).string +
                   bg.string, 1, 3)
-    if ch == '\r' or ch == '\n' or dynSearch:
+    if znak.startswith('/'):
+        komendy = ['/KONFIG',
+                   '/AKT',
+                   '/O <ODDZIAŁ>']
+        # subkomendy = {'/U': ['/U PNW', '/U MTR', '/U DYN', '/U TRC'],
+        #               '/O': ['<ODDZIAŁ>']}
+        podpowiedzi = ""
+        trafienia = 0
+        if znak not in komendy:
+            for i in komendy:
+                if znak in i:
+                    podpowiedzi += '\n'+bg.string+'\033[K'+traf.string+i
+                    trafienia += 1
+                if trafienia >= ustawienia['MaksWynikow']:
+                    break
+        s.setChar(podpowiedzi, 1, 3)
+
+    elif ch == '\r' or ch == '\n' or ustawienia['dynWysz']:
         trafienia = 0
         ostat_traf = ''
         sznak = znak.split('/')
@@ -436,6 +541,7 @@ while __name__ == '__main__':
             sznakinskrytki = sznak[1] in skrytki
         except IndexError:
             sznakinskrytki = False
+        lt = []  # Lista Trafień
         for i in pzk.keys():
             try:
                 if (not sznak[1].isalpha()) and (sznak[1] not in ['MM', 'AM'
@@ -449,29 +555,46 @@ while __name__ == '__main__':
                 sznakini = False
             if znak in i or sznakini:
                 if i in skrytki:
-                    s.setChar(traf.string+i+' '+pzk[i]+' ' +
+                    lt.append(traf.string+i+' '+pzk[i]+' ' +
                               traf_klub.string +
-                              skrytki[i], 1, 4+trafienia)
+                              skrytki[i])
+                    # s.setChar(traf.string+i+' '+pzk[i]+' ' +
+                    #           traf_klub.string +
+                    #           skrytki[i], 1, 4+trafienia)
                 elif sznakinskrytki:
-                    s.setChar(traf.string+i+' '+pzk[i]+' ' +
+                    lt.append(traf.string+i+' '+pzk[i]+' ' +
                               traf_klub.string +
-                              skrytki[sznak[1]], 1, 4+trafienia)
+                              skrytki[sznak[1]])
+                    # s.setChar(traf.string+i+' '+pzk[i]+' ' +
+                    #           traf_klub.string +
+                    #           skrytki[sznak[1]], 1, 4+trafienia)
                 else:
-                    s.setChar(traf.string+i+' '+pzk[i], 1, 4+trafienia)
+                    lt.append(traf.string+i+' '+pzk[i])
+                    # s.setChar(traf.string+i+' '+pzk[i], 1, 4+trafienia)
                 trafienia += 1
                 ostat_traf = i
-                if trafienia >= maxtrafien:
+                if trafienia >= ustawienia['MaksWynikow']:
                     break
+        trafstr = ""
+        for num, i in enumerate(lt):
+            if num >= s.size[1]-4:
+                break
+            trafstr += i+"\n"
+        s.setChar(trafstr+bg.string+"\033[K", 1, 4, flush=False)
         if znak in skrytki:
-            s.setChar(traf_klub.string+' '+skrytki[znak], 1, 3)
+            s.setChar(traf_klub.string+' '+skrytki[znak], 1, 3,
+                      flush=False)
         try:
             if sznak[1] in skrytki:
-                s.setChar(traf_klub.string+' '+skrytki[sznak[1]], 1, 3)
+                s.setChar(traf_klub.string+' '+skrytki[sznak[1]], 1, 3,
+                          flush=False)
         except IndexError:
             pass
         if trafienia == 0:
-            s.setChar(brakTrafien.string, 1, 3)
+            s.setChar(brakTrafien.string, 1, 3, flush=False)
         if trafienia == 1:
             if ostat_traf in skrytki:
-                s.setChar(traf_klub.string+' '+skrytki[ostat_traf], 1, 3)
+                s.setChar(traf_klub.string+' '+skrytki[ostat_traf], 1, 3,
+                          flush=False)
             wyczysc = True
+        # print('', end='', flush=True)
