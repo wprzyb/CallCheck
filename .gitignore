@@ -1,0 +1,13 @@
+logger.py
+logger.txt
+log.txt
+skrytki.txt
+ustawienia.txt
+osec_*
+*~
+wynikiWyszukiwania.*
+__pycache__/*
+ustawienia.json
+old_*
+blad.json
+.flake.sh

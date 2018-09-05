@@ -410,7 +410,7 @@ while __name__ == '__main__':
                 listTraf = []
                 for i in pzk.keys():
                     num += 1
-                    if pzk[i] == znak[3:]:
+                    if pzk[i] == znak[3:] or pzk[i] == '0'+znak[3:]:
                         s.setChar(bg.string+i+'\n', 1, s.size[1]-2)
                         listTraf.append(i)
                         trafienia += 1
