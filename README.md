@@ -4,6 +4,16 @@ Sprawdza czy znak jest w OSEC'u i w klubie
  * program nie wyglaga poprawnie (wyświetla się ←[(...) lub samo [(...))
    - Rozwiązanie:
      - Użyć programu cmder ([można go pobrać tutaj](http://cmder.net/))
+ * Błąd importu
+   - Wygląd:
+   ```
+   mmw: No module named 'mmw'
+Nie można zaimportować mmw3.py.
+Wciśnij Ctrl C aby się zatrzymać ten program, i się wylogować.
+.... prawdopodobnie
+   ```
+   - Rozwiązanie:
+     Zainstalować biblioteke [mmw](https://github.com/Mm2PL/mmw/releases)
 
 # Jak uruchomić ten program
 [Link do wikii](https://github.com/Mm2PL/CallCheck/wiki/Instalacja)
