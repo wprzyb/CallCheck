@@ -11,7 +11,8 @@ Sprawdza czy znak jest w OSEC'u i w klubie
 Nie można zaimportować mmw3.py.
 Wciśnij Ctrl C aby się zatrzymać ten program, i się wylogować.
 .... prawdopodobnie
-   ```
+```
+
    - Rozwiązanie:
      Zainstalować biblioteke [mmw](https://github.com/Mm2PL/mmw/releases)
 
