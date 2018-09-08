@@ -202,7 +202,7 @@ except (json.decoder.JSONDecodeError, NameError) as e:
     if ans.lower()[0] == 't':
         ustawienia = {'MaksWynikow': 30, 'pozwalajNaUsypianie': False,
                       'dynWysz': True,
-                      'pozwalajNaWyczyszczenie': True,
+                      'pozwalajNaWyczyszczenie': False,
                       'trybCzyszczenia': 'backspace',
                       'hashHasla': 'N/A',
                       'czasAdmina': 0.1,
