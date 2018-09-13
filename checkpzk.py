@@ -16,7 +16,7 @@ except ImportError as e:
         pass
 
 
-def recode_file(name, encodingFrom='Latin2'):
+def przekoduj_plik(name, encodingFrom='Latin2'):
     f = open(name, 'r', encoding=encodingFrom)
     lines = []
     num = 0
@@ -39,11 +39,11 @@ def recode_file(name, encodingFrom='Latin2'):
     print('['+name+']: Plik Przekodowany\n')
 
 
-def recode():
+def przekoduj():
     print('Przekodowano 0/2')
-    recode_file('osec_pzk.txt')
+    przekoduj_plik('osec_pzk.txt')
     print('Przekodowano 1/2')
-    recode_file('osec_kluby.txt')
+    przekoduj_plik('osec_kluby.txt')
     print('Przekodowano 2/2')
     time.sleep(1)
 
@@ -57,7 +57,7 @@ try:
     kluby = f2.readlines()
     kluby.pop(0)
 except UnicodeDecodeError:
-    recode()
+    przekoduj()
     f = open('osec_pzk.txt', 'r')
     lines = f.readlines()
     lines.pop(0)
