@@ -75,13 +75,14 @@ for num, line in enumerate(osec_pzk_raw):
     procent = format(num/len(osec_pzk_raw)*100, '.0f')
     print('\033[A\033[2KKonwertowanie linii', num, '/', len(osec_pzk_raw),
           '(' + str(procent)+'%')
-    newline = line
-    while '  ' in newline:  # Dwie spacje som w tym stringu
-        newline = newline.replace('  ', ' ')
-    osec_pzk.extend(newline[:-1].split(' ')
+    while '  ' in line:  # Dwie spacje som w tym stringu
+        line = line.replace('  ', ' ')
+    osec_pzk.extend(line[:-1].split(' ')
                     if 'oddział' not in line.lower()
-                    else [line])
-for num, linia_pzk in enumerate(osec_pzk):
+                    else [line[:-1]])
+osec_pzk_raw = osec_pzk + []
+osec_pzk = []
+for num, linia_pzk in enumerate(osec_pzk_raw):
     if linia_pzk != '':
         osec_pzk.append(linia_pzk)
 # for num, line in enumerate(lines):
@@ -126,7 +127,7 @@ oddzial = ''
 przet_odzialy = []
 pzk = {}
 pzk.update(kluby_fin)
-print()
+print(osec_pzk)
 for num, line in enumerate(osec_pzk):
     if line[0] == ' ':
         przet_odzialy.append(oddzial+'')
@@ -168,6 +169,8 @@ znak = ''
 BANNER = mmw.FormattedString('Sprawdzacz PZK. Autor: Maciek Marciniak SO5AM')
 BG = mmw.FormattedString('$(b_blue)$(bright_white)')
 PROMPT = mmw.FormattedString('$(b_cyan)Znak>')
+PROMPT_WYCZ = mmw.FormattedString(BG.string +
+                                  "$(b_gray)Znak>")
 TRAF = mmw.FormattedString(BG.string+'\033[J\033[2K$(b_green)$(white)')
 BRAK_TRAFIEN = mmw.FormattedString(BG.string +
                                    '\033[J\033[2K$(b_bright_yellow)$(black)'
@@ -175,8 +178,6 @@ BRAK_TRAFIEN = mmw.FormattedString(BG.string +
 TRAF_KLUB = mmw.FormattedString(BG.string +
                                 '$(b_bright_magenta)$(bright_white)'
                                 'Skrytka:')
-PROMPT_WYCZ = mmw.FormattedString(BG.string +
-                                  "$(b_gray)Znak>")
 NACISNIJ_ENTER = mmw.FormattedString(BG.string + "$(b_gray)[Naciśnij enter]")
 SCREEN_WARN = mmw.FormattedString('$(b_red)$(bright_white)'
                                   'UWAGA: Screen nie respektuje '
@@ -199,7 +200,7 @@ DOMYSLNE_USTAWIENIA = {'MaksWynikow': 30, 'pozwalajNaUsypianie': False,
                        'adminDoWylogowania': False,
                        'pozwalajNaShutdown': True}
 try:
-    with open('USTAWIENIA.json') as plk_ust:
+    with open('ustawienia.json') as plk_ust:
         zawPlikuUst = plk_ust.readlines()
 except FileNotFoundError:
     pass
@@ -486,8 +487,8 @@ while __name__ == '__main__':
                                         shell=True)
 
                 tfile = open('wynikiWyszukiwania.txt', 'w')
-                for TRAFienie in sorted(listTraf):
-                    tfile.write(TRAFienie+'\n')
+                for trafienie in sorted(listTraf):
+                    tfile.write(trafienie+'\n')
                 tfile.close()
                 proc.wait()
                 ekran.clear()
