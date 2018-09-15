@@ -1,3 +1,4 @@
+from textwrap import dedent
 import time  # NOQA
 import subprocess
 import os
@@ -183,6 +184,14 @@ adminStr = mmw.FormattedString('$(b_red)[A]')
 s.setChar(bg.string, 0, 0)
 s.clear()
 wyczysc = False
+DOMYSLNE_USTAWIENIA = {'MaksWynikow': 30, 'pozwalajNaUsypianie': False,
+                       'dynWysz': True,
+                       'pozwalajNaWyczyszczenie': False,
+                       'trybCzyszczenia': 'backspace',
+                       'hashHasla': 'N/A',
+                       'czasAdmina': 0.1,
+                       'adminDoWylogowania': False,
+                       'pozwalajNaShutdown': True}
 try:
     with open('ustawienia.json') as plk:
         zawPlikuUst = plk.readlines()
@@ -200,16 +209,14 @@ except (json.decoder.JSONDecodeError, NameError) as e:
         print('Czy chcesz aby je nadpisać?')
         ans = input('[T/n]')
     if ans.lower()[0] == 't':
-        ustawienia = {'MaksWynikow': 30, 'pozwalajNaUsypianie': False,
-                      'dynWysz': True,
-                      'pozwalajNaWyczyszczenie': False,
-                      'trybCzyszczenia': 'backspace',
-                      'hashHasla': 'N/A',
-                      'czasAdmina': 0.1,
-                      'adminDoWylogowania': False}
+        ustawienia = DOMYSLNE_USTAWIENIA
         nzaw = json.dumps(ustawienia, indent=2, sort_keys=True)
         with open('ustawienia.json', 'w') as plk:
             plk.write(nzaw)
+ustawienia_temp = DOMYSLNE_USTAWIENIA.copy()
+ustawienia_temp.update(ustawienia)
+ustawienia = ustawienia_temp
+del ustawienia_temp
 # ustawienia['MaksWynikow'] = 30
 if not isinstance(ustawienia['MaksWynikow'], int):
         print('-'*80)
@@ -398,6 +405,39 @@ while __name__ == '__main__':
             else:
                 key = mmw.decoding.decode(ch+ch2+ch3)
     elif ch == '\t' or ch == '\n' or ch == '\r':
+        if znak.startswith(('/POMOC', '/HELP')):
+            znak = ''
+            s.clear()
+            print(dedent('''
+                    /POMOC
+                        Opis: Wyświetla tę pomoc
+                        Składnia: /POMOC
+                        Aliasy: /HELP
+
+                    /ZAMKNIJ
+                        Opis: Zamknij komputer
+                        Składnia: /ZAMKNIJ
+                        Aliasy: SHUTDOWN, HALT, WYJDZ
+
+                    /O
+                        Opis: Wyświetl wszystkich członków oddziału
+                        Składnia: /O <Oddział>
+
+                    /AKT
+                        Wymagany Admin
+                        Opis: Aktualizuj OSEC
+                        Składnia: /AKT
+
+                    /KONFIG
+                        Wymagany Admin
+                        Opis: Edytuj konfiguracje
+                        Składnia: /KONFIG'''))
+            input('[Enter]')
+            s.clear()
+        if znak.startswith(('/WYJDZ', '/SHUTDOWN', '/HALT', '/ZAMKNIJ')):
+            if ustawienia['pozwalajNaShutdown']:
+                proc = subprocess.Popen('sudo shutdown -h now')
+                exit()
         if znak.startswith('/O'):
             try:
                 trafienia = 0
@@ -462,6 +502,7 @@ while __name__ == '__main__':
                 print('Skrypt zakończony.')
                 print('Wymagany jest restart, aby zatwierdzić zmiany')
                 print('Naciśnij enter aby wyjść.')
+                print('Wciśnij control+c aby anulować')
                 try:
                     input('[ENTER || Ctrl+C]')
                     exit()
@@ -516,7 +557,9 @@ while __name__ == '__main__':
     if znak.startswith('/'):
         komendy = ['/KONFIG',
                    '/AKT',
-                   '/O <ODDZIAŁ>']
+                   '/O <ODDZIAŁ>',
+                   '/WYJDZ',
+                   'Ukryto 3 aliasy (wpisz /POMOC aby je zobaczyć.)']
         # subkomendy = {'/U': ['/U PNW', '/U MTR', '/U DYN', '/U TRC'],
         #               '/O': ['<ODDZIAŁ>']}
         podpowiedzi = ""
