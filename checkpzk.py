@@ -26,6 +26,9 @@ if __name__ != '__main__':
     raise ImportError('Why you import my program?')
 
 num = 0
+paths = {
+    'settings': 'ustawienia.json'
+}
 
 def przekoduj_plik(nazwa, kodowanie_pliku='Latin2'):
     """Przekoduj plik (duh)"""
@@ -203,7 +206,7 @@ DOMYSLNE_USTAWIENIA = {'MaksWynikow': 30, 'pozwalajNaUsypianie': False,
                        'adminDoWylogowania': False,
                        'pozwalajNaShutdown': True}
 try:
-    with open('ustawienia.json') as plk_ust:
+    with open(paths['settings']) as plk_ust:
         zawPlikuUst = plk_ust.readlines()
 except FileNotFoundError:
     pass
@@ -221,7 +224,7 @@ except (json.decoder.JSONDecodeError, NameError) as e:
     if ans.lower()[0] == 't':
         USTAWIENIA = DOMYSLNE_USTAWIENIA
         nzaw = json.dumps(USTAWIENIA, indent=2, sort_keys=True)
-        with open('USTAWIENIA.json', 'w') as plk:
+        with open(paths['settings'], 'w') as plk:
             plk.write(nzaw)
 USTAWIENIA_temp = DOMYSLNE_USTAWIENIA.copy()
 USTAWIENIA_temp.update(USTAWIENIA)
@@ -276,7 +279,7 @@ if USTAWIENIA['hashHasla'].lower() == 'n/a':
                 kupa = hasher.hexdigest()
                 USTAWIENIA['hashHasla'] = kupa
                 nzaw = json.dumps(USTAWIENIA, indent=2, sort_keys=True)
-                with open('USTAWIENIA.json', 'w') as plk:
+                with open(paths['settings'], 'w') as plk:
                     plk.write(nzaw)
                 break
             else:
@@ -535,12 +538,12 @@ while __name__ == '__main__':
                       'nie jesteś w trybie admina')
                 input('[enter]')
             else:
-                proc = subprocess.Popen('sensible-editor USTAWIENIA.json',
+                proc = subprocess.Popen('sensible-editor ' + paths['settings'],
                                         shell=True)
                 while True:
                     if proc.poll() is not None:
                         break
-                with open('USTAWIENIA.json', 'r') as plk:
+                with open(paths['settings'], 'r') as plk:
                     zaw = plk.readlines()
                     USTAWIENIA = json.loads(''.join(zaw))
             ekran.setChar(BG.string, 0, 0)
