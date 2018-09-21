@@ -23,6 +23,7 @@ except ImportError as err:
 if __name__ != '__main__':
     raise ImportError('Why you import my program?')
 
+num = 0
 
 def przekoduj_plik(nazwa, kodowanie_pliku='Latin2'):
     """Przekoduj plik (duh)"""
