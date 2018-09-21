@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 """Mały program do sprawdzania zanków w osecu
 Licencja: GNU GPL v3
 
